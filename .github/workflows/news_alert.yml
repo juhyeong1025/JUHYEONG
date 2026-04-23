@@ -1,0 +1,44 @@
+name: 휴게소 키워드 알림
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # 10분마다 자동 실행
+  workflow_dispatch:           # 수동 실행 버튼도 활성화
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: sent_news.json
+          key: sent-news-${{ github.run_id }}
+          restore-keys: |
+            sent-news-
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 feedparser
+
+      - name: Run crawler
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python crawler.py
+
+      - name: Save cache
+        uses: actions/cache@v4
+        with:
+          path: sent_news.json
+          key: sent-news-${{ github.run_id }}
